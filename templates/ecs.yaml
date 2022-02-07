@@ -1,0 +1,18 @@
+ECSDeployment:
+  Name: "Qpercom"
+  Network:
+    Id: ""
+    Subnets:
+      - ""   
+  Services:
+    - Name: API
+      Image: "api:bka"
+      Replicas: 2
+      Port:
+        From: 80
+        To: 80
+      Cpu: 256
+      Memory: 512
+      Environment: []
+
+

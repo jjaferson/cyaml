@@ -16,3 +16,16 @@ ECSDeployment:
       Environment: []
 
 
+# Global Deployment resources
+# 1. Loadbalancer OK
+# 2. Cluster OK
+
+# Each service will have
+# 1. TargetGroup OK
+# 2. TaskDefinition 
+# 3. Service
+# 4. SecurityGroup
+# 5. LBListener OK
+# 6 ListenerRules
+
+  

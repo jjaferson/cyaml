@@ -14,6 +14,7 @@ const (
 	loadBalancerSecurityGroup = "LoadBalancerSecurityGroup"
 	targetGroupResourceName   = "TargetGroup"
 	loadBalancerListener      = "LBListener"
+	loadBalancerListenerRules = "LBListenerRules"
 	clusterName               = "ECSClusterName"
 )
 
@@ -59,12 +60,6 @@ func (ecsTemplate *ecsTemplateGenerator) Generate() (template string, err error)
 	ecsTemplate.addResource(loadBalancerSecurityGroup,
 		awsResources.NewSecurityGroup(clusterName, network.ID, getIngressPorts()))
 
-	// Creates load balancer listener for the ingress ports
-	for i, resource := range awsResources.NewLoadBalancerListener(
-		loadBalancerResourceName, getIngressPorts()) {
-		ecsTemplate.addResource(fmt.Sprintf("%s%d", loadBalancerListener, i), resource)
-	}
-
 	// y, err := ecsTemplate.cfTemplate.YAML()
 	// if err != nil {
 	// 	return
@@ -85,15 +80,33 @@ func getIngressPorts() []int {
 func (ecsTemplate *ecsTemplateGenerator) addDeploymentServiceResource() {
 	services := ecsTemplate.ecsDeployment.Services
 	network := ecsTemplate.ecsDeployment.Network
+	lbListenerResourceNames := map[int]string{}
+
+	// Creates load balancer listener for the ingress ports
+	for i, port := range getIngressPorts() {
+		lbListenerResourceNames[port] = fmt.Sprintf("%s%d", loadBalancerListener, i)
+		ecsTemplate.addResource(lbListenerResourceNames[port],
+			awsResources.NewLoadBalancerListener(loadBalancerResourceName, port))
+	}
 
 	for _, service := range services {
 		targetGroupResourceName := fmt.Sprintf("%s%s", service.Name, targetGroupResourceName)
+		lbListenerRulesResourceName := fmt.Sprintf("%s%s", service.Name, loadBalancerListenerRules)
+
+		//TODO: validate services
+		// 1) port.from container in the ingress port
 
 		// Creates target group
 		ecsTemplate.addResource(
 			targetGroupResourceName,
-			awsResources.NewTargetGroup(service.Name, network.ID))
+			awsResources.NewTargetGroup(service.Name, network.ID, service.Port.To))
 
-		//TODO: create ListenerRules
+		//create ListenerRules
+		ecsTemplate.addResource(lbListenerRulesResourceName,
+			awsResources.AddNewLoadBalancerListenerRules(
+				lbListenerResourceNames[service.Port.From], targetGroupResourceName, service.Name))
+
+		//TODO Create task definition
+
 	}
 }

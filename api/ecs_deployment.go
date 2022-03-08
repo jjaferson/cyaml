@@ -1,9 +1,9 @@
 package api
 
 type ECSDeployment struct {
-	Name     string     `yaml:"Name"`
-	Network  Network    `yaml:"Network"`
-	Services []Services `yaml:"Services"`
+	Name     string    `yaml:"Name"`
+	Network  Network   `yaml:"Network"`
+	Services []Service `yaml:"Services"`
 }
 
 type Network struct {
@@ -16,12 +16,12 @@ type Port struct {
 	To   int `yaml:"To"`
 }
 
-type Services struct {
+type Service struct {
 	Name        string        `yaml:"Name"`
 	Image       string        `yaml:"Image"`
 	Replicas    int           `yaml:"Replicas"`
 	Port        Port          `yaml:"Port"`
-	CPU         int           `yaml:"Cpu"`
-	Memory      int           `yaml:"Memory"`
+	CPU         string        `yaml:"Cpu"`
+	Memory      string        `yaml:"Memory"`
 	Environment []interface{} `yaml:"Environment"`
 }

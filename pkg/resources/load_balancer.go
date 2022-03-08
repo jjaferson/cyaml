@@ -21,28 +21,46 @@ func NewLoadBalancer(name, securityGroupResourceName string, subnets []string) *
 	}
 }
 
-func NewTargetGroup(name, vpcId string) *cloudformation.AWSElasticLoadBalancingV2TargetGroup {
+func NewTargetGroup(name, vpcId string, port int) *cloudformation.AWSElasticLoadBalancingV2TargetGroup {
 	name = fmt.Sprintf("%s-lb-targetgroup", name)
 	return &cloudformation.AWSElasticLoadBalancingV2TargetGroup{
 		Name:       name,
 		VpcId:      vpcId,
 		TargetType: "ip",
+		Port:       port,
 	}
 }
 
-func NewLoadBalancerListener(loadbalancerResourceName string, ports []int) []*cloudformation.AWSElasticLoadBalancingV2Listener {
-	var listeners []*cloudformation.AWSElasticLoadBalancingV2Listener
-	for _, port := range ports {
-		protocal := "HTTPS"
-		if port == 80 {
-			protocal = "HTTP"
-		}
-
-		listeners = append(listeners, &cloudformation.AWSElasticLoadBalancingV2Listener{
-			LoadBalancerArn: cloudformation.Ref(loadbalancerResourceName),
-			Port:            port,
-			Protocol:        protocal,
-		})
+func NewLoadBalancerListener(loadbalancerResourceName string, port int) *cloudformation.AWSElasticLoadBalancingV2Listener {
+	protocol := "HTTPS"
+	if port == 80 {
+		protocol = "HTTP"
 	}
-	return listeners
+
+	return &cloudformation.AWSElasticLoadBalancingV2Listener{
+		LoadBalancerArn: cloudformation.Ref(loadbalancerResourceName),
+		Port:            port,
+		Protocol:        protocol,
+	}
+}
+
+func AddNewLoadBalancerListenerRules(loadbalancerListenerResourceName, targetGroupResourceName, serviceName string) *cloudformation.AWSElasticLoadBalancingV2ListenerRule {
+	// at the moment we only support forward type via the path-pattern
+	lbListenerRules := cloudformation.AWSElasticLoadBalancingV2ListenerRule{
+		Actions: []cloudformation.AWSElasticLoadBalancingV2ListenerRule_Action{
+			{
+				TargetGroupArn: cloudformation.Ref(targetGroupResourceName),
+				Type:           "forward",
+			},
+		},
+		ListenerArn: cloudformation.Ref(loadbalancerListenerResourceName),
+		Conditions: []cloudformation.AWSElasticLoadBalancingV2ListenerRule_RuleCondition{
+			{
+				Field:  "path-pattern",
+				Values: []string{serviceName},
+			},
+		},
+	}
+
+	return &lbListenerRules
 }

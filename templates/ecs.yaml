@@ -21,11 +21,13 @@ ECSDeployment:
 # 2. Cluster OK
 
 # Each service will have
+# Those are lb related
 # 1. TargetGroup OK
+# 5. LBListener OK
+# 6 ListenerRules OK
+# container related
 # 2. TaskDefinition 
 # 3. Service
 # 4. SecurityGroup
-# 5. LBListener OK
-# 6 ListenerRules
 
   

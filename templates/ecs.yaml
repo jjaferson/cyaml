@@ -1,19 +1,19 @@
-ECSDeployment:
-  Name: "Qpercom"
-  Network:
-    Id: ""
-    Subnets:
-      - ""   
-  Services:
-    - Name: API
-      Image: "api:bka"
-      Replicas: 2
-      Port:
-        From: 80
-        To: 80
-      Cpu: 256
-      Memory: 512
-      Environment: []
+Name: cyaml-test
+Network:
+  Id: vpc-03255e6b
+  Subnets:
+    - subnet-310d6559
+    - subnet-832fddf8   
+Services:
+  - Name: echo-server
+    Image: jmalloc/echo-server
+    Replicas: 2
+    Port:
+      From: 80
+      To: 8080
+    Cpu: 256
+    Memory: 512
+    Environment: []
 
 
 # Global Deployment resources
@@ -26,8 +26,10 @@ ECSDeployment:
 # 5. LBListener OK
 # 6 ListenerRules OK
 # container related
-# 2. TaskDefinition 
-# 3. Service
-# 4. SecurityGroup
+# 2. TaskDefinition OK
+# 3. Service OK
+# 4. SecurityGroup OK
+
+
 
   

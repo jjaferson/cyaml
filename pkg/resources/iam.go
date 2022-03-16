@@ -1,24 +1,6 @@
 package resources
 
-import (
-	"github.com/awslabs/goformation/cloudformation"
-	"github.com/jjaferson/cyaml/api"
-)
-
-const (
-	// network mode default to awsvpc as we are using fargate
-	networkMode = "awsvpc"
-)
-
-func NewECSTaskDefinition(name string, service api.Service) *cloudformation.AWSECSTaskDefinition {
-
-	return &cloudformation.AWSECSTaskDefinition{
-		Family:      name,
-		Cpu:         service.CPU,
-		Memory:      service.Memory,
-		NetworkMode: networkMode,
-	}
-}
+import "github.com/awslabs/goformation/cloudformation"
 
 func NewECSExecutionRole() *cloudformation.AWSIAMRole {
 	return &cloudformation.AWSIAMRole{

@@ -10,12 +10,16 @@ import (
 )
 
 const (
-	loadBalancerResourceName  = "LoadBalancer"
-	loadBalancerSecurityGroup = "LoadBalancerSecurityGroup"
-	targetGroupResourceName   = "TargetGroup"
-	loadBalancerListener      = "LBListener"
-	loadBalancerListenerRules = "LBListenerRules"
-	clusterName               = "ECSClusterName"
+	loadBalancerResourceName              = "LoadBalancer"
+	loadBalancerSecurityGroup             = "LoadBalancerSecurityGroup"
+	targetGroupResourceName               = "TargetGroup"
+	loadBalancerListener                  = "LBListener"
+	loadBalancerListenerRulesResourceName = "LBListenerRules"
+	clusterResourceName                   = "ECSClusterName"
+	ecsIAMExecutionRoleResourceName       = "ECSIAMExecutionRole"
+	ecsTaskDefinitionResourceName         = "ECSTaskDefinition"
+	ecsServiceResourceName                = "ECSService"
+	ecsServiceSecurityGroup               = "ECSServiceSecurityGroup"
 )
 
 type ECSTemplate interface {
@@ -49,7 +53,7 @@ func (ecsTemplate *ecsTemplateGenerator) Generate() (template string, err error)
 	network := ecsTemplate.ecsDeployment.Network
 
 	// Creates cloudformation ECS cluster
-	ecsTemplate.addResource(clusterName, awsResources.NewECSCluster(clusterName))
+	ecsTemplate.addResource(clusterResourceName, awsResources.NewECSCluster(clusterName))
 
 	// Creates cloudformation loadbalance
 	ecsTemplate.addResource(loadBalancerResourceName,
@@ -60,11 +64,14 @@ func (ecsTemplate *ecsTemplateGenerator) Generate() (template string, err error)
 	ecsTemplate.addResource(loadBalancerSecurityGroup,
 		awsResources.NewSecurityGroup(clusterName, network.ID, getIngressPorts()))
 
-	// y, err := ecsTemplate.cfTemplate.YAML()
-	// if err != nil {
-	// 	return
-	// }
-	// template = string(y)
+	// add service resources
+	ecsTemplate.addDeploymentServiceResource()
+
+	y, err := ecsTemplate.cfTemplate.YAML()
+	if err != nil {
+		return
+	}
+	template = string(y)
 
 	return template, nil
 }
@@ -80,33 +87,59 @@ func getIngressPorts() []int {
 func (ecsTemplate *ecsTemplateGenerator) addDeploymentServiceResource() {
 	services := ecsTemplate.ecsDeployment.Services
 	network := ecsTemplate.ecsDeployment.Network
-	lbListenerResourceNames := map[int]string{}
+	lbListenerResourceName := map[int]string{}
+	clusterName := ecsTemplate.ecsDeployment.Name
+
+	// ECS Execution role for the task definitions
+	ecsTemplate.addResource(ecsIAMExecutionRoleResourceName, awsResources.NewECSExecutionRole())
 
 	// Creates load balancer listener for the ingress ports
 	for i, port := range getIngressPorts() {
-		lbListenerResourceNames[port] = fmt.Sprintf("%s%d", loadBalancerListener, i)
-		ecsTemplate.addResource(lbListenerResourceNames[port],
+		lbListenerResourceName[port] = fmt.Sprintf("%s%d", loadBalancerListener, i)
+		ecsTemplate.addResource(lbListenerResourceName[port],
 			awsResources.NewLoadBalancerListener(loadBalancerResourceName, port))
 	}
 
-	for _, service := range services {
-		targetGroupResourceName := fmt.Sprintf("%s%s", service.Name, targetGroupResourceName)
-		lbListenerRulesResourceName := fmt.Sprintf("%s%s", service.Name, loadBalancerListenerRules)
+	for i, service := range services {
+		targetGroupSvcResourceName := fmt.Sprintf("%s%d", targetGroupResourceName, i)
+		lbListenerRulesSvcResourceName := fmt.Sprintf("%s%d", loadBalancerListenerRulesResourceName, i)
+		ecsTaskDefinitionSvcResourceName := fmt.Sprintf("%s%d", ecsTaskDefinitionResourceName, i)
+		ecsSvcResourceName := fmt.Sprintf("%s%d", ecsServiceResourceName, i)
+		ecsSvcSecurityGroup := fmt.Sprintf("%s%d", ecsServiceSecurityGroup, i)
 
 		//TODO: validate services
 		// 1) port.from container in the ingress port
 
 		// Creates target group
 		ecsTemplate.addResource(
-			targetGroupResourceName,
+			targetGroupSvcResourceName,
 			awsResources.NewTargetGroup(service.Name, network.ID, service.Port.To))
 
 		//create ListenerRules
-		ecsTemplate.addResource(lbListenerRulesResourceName,
+		ecsTemplate.addResource(lbListenerRulesSvcResourceName,
 			awsResources.AddNewLoadBalancerListenerRules(
-				lbListenerResourceNames[service.Port.From], targetGroupResourceName, service.Name))
+				lbListenerResourceName[service.Port.From], targetGroupSvcResourceName, service.Name))
 
-		//TODO Create task definition
+		//Create task definition
+		ecsTemplate.addResource(ecsTaskDefinitionSvcResourceName,
+			awsResources.NewECSTaskDefinition(clusterName, service, ecsIAMExecutionRoleResourceName))
 
+		// Creates security group to access the service
+		ecsTemplate.addResource(ecsSvcSecurityGroup,
+			awsResources.NewSecurityGroup(service.Name, network.ID, []int{service.Port.To}))
+
+		// Creates ecs cluster service
+		ecsTemplate.addResource(ecsSvcResourceName,
+			awsResources.NewECSService(
+				service.Name,
+				clusterResourceName,
+				ecsTaskDefinitionSvcResourceName,
+				targetGroupSvcResourceName,
+				lbListenerResourceName[service.Port.From],
+				ecsSvcSecurityGroup,
+				network.Subnets,
+				service.Port.To,
+			),
+		)
 	}
 }

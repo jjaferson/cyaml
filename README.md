@@ -1,6 +1,6 @@
 # CYaml
 
-CYaml is a CLI that generates [AWS CloudFormation](https://aws.amazon.com/cloudformation/) template to run containers on AWS from a simplified yaml file.
+CYaml is a CLI that generates [AWS CloudFormation](https://aws.amazon.com/cloudformation/) templates to run containers on AWS from a simplified yaml file.
 
 > **Note:** CYaml is still under development and is only capable of generating CloudFormation templates for ECS using Fargate in a pre-defined VPC.
 

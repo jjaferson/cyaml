@@ -1,9 +1,9 @@
 Name: cyaml-test
 Network:
-  Id: vpc-03255e6b
+  Id: vpc-05673e6b
   Subnets:
-    - subnet-310d6559
-    - subnet-832fddf8   
+    - subnet-310d8051
+    - subnet-8321kaf2  
 Services:
   - Name: echo-server
     Image: jmalloc/echo-server
@@ -13,23 +13,6 @@ Services:
       To: 8080
     Cpu: 256
     Memory: 512
-    Environment: []
-
-
-# Global Deployment resources
-# 1. Loadbalancer OK
-# 2. Cluster OK
-
-# Each service will have
-# Those are lb related
-# 1. TargetGroup OK
-# 5. LBListener OK
-# 6 ListenerRules OK
-# container related
-# 2. TaskDefinition OK
-# 3. Service OK
-# 4. SecurityGroup OK
-
 
 
   

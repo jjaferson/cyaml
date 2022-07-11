@@ -1,18 +1,18 @@
-ECSDeployment:
-  Name: "Qpercom"
-  Network:
-    Id: ""
-    Subnets:
-      - ""   
-  Services:
-    - Name: API
-      Image: "api:bka"
-      Replicas: 2
-      Port:
-        From: 80
-        To: 80
-      Cpu: 256
-      Memory: 512
-      Environment: []
+Name: cyaml-test
+Network:
+  Id: vpc-05673e6b
+  Subnets:
+    - subnet-310d8051
+    - subnet-8321kaf2  
+Services:
+  - Name: echo-server
+    Image: jmalloc/echo-server
+    Replicas: 2
+    Port:
+      From: 80
+      To: 8080
+    Cpu: 256
+    Memory: 512
 
 
+  
